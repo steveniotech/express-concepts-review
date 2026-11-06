@@ -82,7 +82,8 @@ function browser(saved=null){
   click(){if(this.download)download=this.download;}
  }
  const get=id=>{if(!elements.has(id))elements.set(id,new Element(id));return elements.get(id);};
- const document={getElementById:get,querySelector:get,createElement:()=>new Element(),documentElement:{lang:'en'}};
+ const document={getElementById:get,querySelector:selector=>selector==='.brand-logo'?(get('.brand').innerHTML.includes('brand-logo')?get('.brand-logo'):null):get(selector),createElement:()=>new Element(),documentElement:{lang:'en'}};
+ get('.brand').innerHTML=html.match(/class="brand"[^>]*>([\s\S]*?)<\/a>/)?.[1]||'';
  const location={hash:'',pathname:'/index.html',search:''};
  const context=vm.createContext({document,location,history:{replaceState:()=>{location.hash='';}},window:{addEventListener(){},confirm:()=>{confirms++;return true;}},localStorage:{getItem:key=>stored.get(key)||null,setItem:(key,value)=>{writes.push(key);stored.set(key,value);}},setTimeout:()=>1,URL:{createObjectURL:()=> 'blob:local-export',revokeObjectURL(){}},Blob:class{},console});
  for(const name of ['lessons.js','app.js','teacher.js'])vm.runInContext(fs.readFileSync(path.join(__dirname,name),'utf8'),context,{filename:name});
@@ -124,3 +125,13 @@ for(const m of BC.modules){A.startPreview(m.id);b.click('start');for(const q of 
 console.log('Browser-handler substitutes passed: all 124 English question/hint/result renders, actual retry/review/refresh handlers, preview writes blocked, teacher details, export, and two-confirmation reset with cancellation.');
 
 console.log('All automated checks passed. Browser, assistive technology, and deployed Pages checks require separate verification.');
+
+// Language/view changes must preserve the real logo from the shipped header.
+const logoBrowser=browser();
+const assertLogo=()=>assert.match(logoBrowser.get('.brand').innerHTML,/<img[^>]+class="brand-logo"[^>]+src="\.\/assets\/io-tech-center-logo\.png"/);
+assertLogo();
+logoBrowser.click('module',{module:'paths'});assertLogo();
+logoBrowser.click('start');assertLogo();
+logoBrowser.context.ReviewApp.showTeacher();assertLogo();
+logoBrowser.context.ReviewApp.home();assertLogo();
+console.log('Brand regression passed: logo survives home, lesson, question and teacher language/view rendering.');
